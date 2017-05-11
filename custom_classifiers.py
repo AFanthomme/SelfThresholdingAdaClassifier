@@ -1,16 +1,12 @@
-import copy
 import logging
 from operator import itemgetter
 import matplotlib.pyplot as p
 import numpy as np
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
-debug = True
-
-def numberToBase(n, b):
+def base_change(n, b):
     if n == 0:
         return [0]
     digits = []
@@ -19,10 +15,18 @@ def numberToBase(n, b):
         n /= b
     return digits
 
-def n_dimensional_interator(dimension, support=(0, 1), n_points=10):
+def n_dim_iterator(dimension, support=(0, 1), n_points=10):
+    """
+    Basic iterator on a n-dimensional square grid of given support with a given number of points in each direction.
+    
+    :param dimension: 
+    :param support: 
+    :param n_points: 
+    :return: list of length dimension with the position of the current point on the grid
+    """
     plop = np.linspace(support[0], support[1], n_points)
     for flat_idx in range(n_points**dimension):
-        coordinates = numberToBase(flat_idx, n_points)
+        coordinates = base_change(flat_idx, n_points)
         while len(coordinates) < dimension:
             coordinates.append(0)
         yield [plop[i] for i in coordinates]
@@ -113,10 +117,8 @@ class SelfThresholdingAdaClassifier:
         self.scores = self.predict_proba(X_test)
         self.ground_truth = y_test
 
-        for thresholds in n_dimensional_interator(self.n_classes_, support=limits, n_points=n_points):
-            # logging.info(thresholds)
+        for thresholds in n_dim_iterator(self.n_classes_, support=limits, n_points=n_points):
             self.__assess_thresholds(thresholds)
-
 
     def explore_history(self):
         sorted_history = sorted(self.history.items(), key=itemgetter(1), reverse=True)
